@@ -2,60 +2,86 @@ angular.module('starter.controllers', [])
 
 .controller('DashCtrl', function($scope, $cordovaGeolocation, $http) {
 
+  var options = {timeout: 10000, enableHighAccuracy: true};
 
-  var options = {
-    timeout: 10000,
-    enableHighAccuracy: true
-  };
+    // $cordovaGeolocation.getCurrentPosition(options).then(function(position){
 
-  $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
+    //   var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+
+    //   var mapOptions = {
+    //     center: latLng,
+    //     zoom: 15,
+    //     mapTypeId: google.maps.MapTypeId.ROADMAP
+    //   };
+
+    //   $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
+
+    // }, function(error){
+    //   console.log("Could not get location");
+    // });
 
     $http.get("data/airbnb.json")
       .then(function(response) {
 
-        $scope.geoloc = response.data;
+      $scope.geoloc = response.data;
 
-        console.log($scope.geoloc);
+      console.log($scope.geoloc);
 
-        $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
+      var centerPos = new google.maps.LatLng(0, 0);
 
-        // Display multiple markers on a map
-        var infoWindow = new google.maps.InfoWindow(),
-          marker, i;
+      //Initial position
+      var mapOptions = {
+        center: centerPos,
+        zoom: 15,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+       };
 
-        // Loop through our array of markers & place each one on the map
-        for (i = 0; i < 500; i++) {
-          var position = new google.maps.LatLng($scope.geoloc[i].latitude, $scope.geoloc[i].longitude);
-          bounds.extend(position);
-          marker = new google.maps.Marker({
-            position: position,
-            map: $scope.map
-          });
+      $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
+      var latLng;
 
-          // Allow each marker to have an info window
-          google.maps.event.addListener(marker, 'click', (function(marker, i) {
-            return function() {
-              infoWindow.setContent(infoWindowContent[i][0]);
-              infoWindow.open($scope.map, marker);
-            }
-          })(marker, i));
-
-          // Automatically center the map fitting all markers on the screen
-          $scope.map.fitBounds(bounds);
-        }
-
-        // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
-        var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
-          this.setZoom(14);
-          google.maps.event.removeListener(boundsListener);
+      //Add json markers
+      for(var i = 0; i < 300; i++) {
+        var marker = $scope.geoloc[i];
+        latLng = new google.maps.LatLng(marker.latitude, marker.longitude);
+        var marker = new google.maps.Marker({
+          map: $scope.map,
+          animation: google.maps.Animation.DROP,
+          position: latLng
         });
+      }
 
+      $cordovaGeolocation.getCurrentPosition(options).then(function(position){
 
-      }, function(error) {
+        //Uncomment this to center to user location. Comment this to center to latest marker
+        //var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+        $scope.map.setCenter(latLng);
+
+      }, function(error){
         console.log("Could not get location");
       });
+    }, function(error){
+      console.log("Could not load json");
+    });
 
-  });
+    //Wait until the map is loaded
+    google.maps.event.addListenerOnce($scope.map, 'idle', function(){
+
+      var marker = new google.maps.Marker({
+          map: $scope.map,
+          animation: google.maps.Animation.DROP,
+          position: latLng
+      });
+
+      var infoWindow = new google.maps.InfoWindow({
+          content: "Here I am!"
+      });
+
+      google.maps.event.addListener(marker, 'click', function () {
+          infoWindow.open($scope.map, marker);
+      });
+
+    });
+
 
 })
 
