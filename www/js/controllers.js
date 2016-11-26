@@ -2,40 +2,58 @@ angular.module('starter.controllers', [])
 
 .controller('DashCtrl', function($scope, $cordovaGeolocation, $http) {
 
-  $scope.dataAvailable = [];
 
-  var options = {timeout: 10000, enableHighAccuracy: true};
+  var options = {
+    timeout: 10000,
+    enableHighAccuracy: true
+  };
 
-    $cordovaGeolocation.getCurrentPosition(options).then(function(position){
+  $cordovaGeolocation.getCurrentPosition(options).then(function(position) {
 
-    $http.get("airbnb.json")
+    $http.get("data/airbnb.json")
       .then(function(response) {
 
-      $scope.geoloc = response.data;
+        $scope.geoloc = response.data;
 
-      console.log($scope.geoloc);
+        console.log($scope.geoloc);
 
-      var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+        $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
 
-      var mapOptions = {
-        center: latLng,
-        zoom: 15,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
-      };
+        // Display multiple markers on a map
+        var infoWindow = new google.maps.InfoWindow(),
+          marker, i;
 
-      $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
+        // Loop through our array of markers & place each one on the map
+        for (i = 0; i < 500; i++) {
+          var position = new google.maps.LatLng($scope.geoloc[i].latitude, $scope.geoloc[i].longitude);
+          bounds.extend(position);
+          marker = new google.maps.Marker({
+            position: position,
+            map: $scope.map
+          });
 
-      //for (var i=0,tot=$scope.dataAvailable.length;i<tot; i++) {
-                  var marker = new google.maps.Marker({
-                map: $scope.map,
-                animation: google.maps.Animation.DROP,
-                position: latLng
-            });
-      //}
+          // Allow each marker to have an info window
+          google.maps.event.addListener(marker, 'click', (function(marker, i) {
+            return function() {
+              infoWindow.setContent(infoWindowContent[i][0]);
+              infoWindow.open($scope.map, marker);
+            }
+          })(marker, i));
 
-    }, function(error){
-      console.log("Could not get location");
-    });
+          // Automatically center the map fitting all markers on the screen
+          $scope.map.fitBounds(bounds);
+        }
+
+        // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
+        var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+          this.setZoom(14);
+          google.maps.event.removeListener(boundsListener);
+        });
+
+
+      }, function(error) {
+        console.log("Could not get location");
+      });
 
   });
 
