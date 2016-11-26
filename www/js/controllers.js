@@ -20,25 +20,25 @@ angular.module('starter.controllers', [])
     //   console.log("Could not get location");
     // });
 
+    var centerPos = new google.maps.LatLng(0, 0);
+
+    //Initial position
+    var mapOptions = {
+      center: centerPos,
+      zoom: 15,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+     };
+
+    $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
+    var latLng;
+
+    //Get help offerers
     $http.get("data/airbnb.json")
       .then(function(response) {
 
       $scope.geoloc = response.data;
 
       console.log($scope.geoloc);
-
-      var centerPos = new google.maps.LatLng(0, 0);
-
-      //Initial position
-      var mapOptions = {
-        center: centerPos,
-        zoom: 15,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
-       };
-
-      $scope.map = new google.maps.Map(document.getElementById("map"), mapOptions);
-      var latLng;
-
       //Add json markers
       for(var i = 0; i < 300; i++) {
         var marker = $scope.geoloc[i];
@@ -46,41 +46,71 @@ angular.module('starter.controllers', [])
         var marker = new google.maps.Marker({
           map: $scope.map,
           animation: google.maps.Animation.DROP,
-          position: latLng
+          position: latLng,
+          icon: 'img/pin_shelter.png'
         });
       }
 
-      $cordovaGeolocation.getCurrentPosition(options).then(function(position){
+      //Center to last node
+      $scope.map.setCenter(latLng);
 
-        //Uncomment this to center to user location. Comment this to center to latest marker
-        //var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-        $scope.map.setCenter(latLng);
-
-      }, function(error){
-        console.log("Could not get location");
-      });
     }, function(error){
       console.log("Could not load json");
     });
 
-    //Wait until the map is loaded
-    google.maps.event.addListenerOnce($scope.map, 'idle', function(){
+    $http.get("data/in_need.json")
+      .then(function(response) {
 
-      var marker = new google.maps.Marker({
+      $scope.geoloc = response.data;
+
+      console.log($scope.geoloc);
+      //Add json markers
+      for(var i = 0; i < $scope.geoloc.length; i++) {
+        var marker = $scope.geoloc[i];
+        latLng = new google.maps.LatLng(marker.latitude, marker.longitude);
+        var marker = new google.maps.Marker({
           map: $scope.map,
           animation: google.maps.Animation.DROP,
-          position: latLng
-      });
+          position: latLng,
+          icon: 'img/pin_in_need.png'
+        });
+      }
 
-      var infoWindow = new google.maps.InfoWindow({
-          content: "Here I am!"
-      });
+      //Center to last node
+      $scope.map.setCenter(latLng);
 
-      google.maps.event.addListener(marker, 'click', function () {
-          infoWindow.open($scope.map, marker);
-      });
-
+    }, function(error){
+      console.log("Could not load json");
     });
+
+    $cordovaGeolocation.getCurrentPosition(options).then(function(position){
+
+      //Uncomment this to center to user location
+      //var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+      //$scope.map.setCenter(latLng);
+
+    }, function(error){
+      console.log("Could not get location");
+    });
+
+    //Wait until the map is loaded
+    // google.maps.event.addListenerOnce($scope.map, 'idle', function(){
+
+    //   var marker = new google.maps.Marker({
+    //       map: $scope.map,
+    //       animation: google.maps.Animation.DROP,
+    //       position: latLng
+    //   });
+
+    //   var infoWindow = new google.maps.InfoWindow({
+    //       content: "Here I am!"
+    //   });
+
+    //   google.maps.event.addListener(marker, 'click', function () {
+    //       infoWindow.open($scope.map, marker);
+    //   });
+
+    // });
 
 
 })
